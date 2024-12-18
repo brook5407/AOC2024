@@ -1,18 +1,14 @@
 def search_plant(garden, i, j, value, plants = [])
   rows, cols = garden.length, garden[0].length
 
-  # Check if the current cell is out of bounds or not the target value
   if i < 0 || i >= rows || j < 0 || j >= cols || garden[i][j] != value
     return
   end
 
-  # Mark the cell as visited
   garden[i][j] = nil
 
-  # Add the current cell to the list of plants
   plants << [j, i]
 
-  # Explore 4 directions
   directions = [[0, 1], [0, -1], [1, 0], [-1, 0]]
   directions.each do |dx, dy|
     search_plant(garden, i + dx, j + dy, value, plants)
@@ -22,46 +18,32 @@ def search_plant(garden, i, j, value, plants = [])
 end
 
 def calculate_side(plants, rows, cols)
-  sides = 0
   return 4 if plants.length == 1
 
-  plants.each do |x, y|
-    left_neighbor = plants.include?([x-1, y])
-    right_neighbor = plants.include?([x+1, y])
-    top_neighbor = plants.include?([x, y-1])
-    bottom_neighbor = plants.include?([x, y+1])
-    left_top = plants.include?([x-1, y-1])
-    right_top = plants.include?([x+1, y-1])
-    left_bottom = plants.include?([x-1, y+1])
-    right_bottom = plants.include?([x+1, y+1])
+  sides = 0
+  directions = [
+    [-1, 0], [1, 0], [0, -1], [0, 1], 
+    [-1, -1], [1, -1], [-1, 1], [1, 1] 
+  ]
 
-    if !right_top && ((top_neighbor && right_neighbor) || (!top_neighbor && !right_neighbor))
-      sides += 1
-    end
-    if !left_top && ((top_neighbor && left_neighbor) || (!top_neighbor && !left_neighbor))
-      sides += 1
-    end
-    if !left_bottom && ((bottom_neighbor && left_neighbor) || (!bottom_neighbor && !left_neighbor))
-      sides += 1
-    end
-    if !right_bottom && ((bottom_neighbor && right_neighbor) || (!bottom_neighbor && !right_neighbor))
-      sides += 1
-    end
-    if right_top && !top_neighbor && !right_neighbor
-      sides += 1
-    end
-    if left_top && !top_neighbor && !left_neighbor
-      sides += 1
-    end
-    if left_bottom && !bottom_neighbor && !left_neighbor
-      sides += 1
-    end
-    if right_bottom && !bottom_neighbor && !right_neighbor
-      sides += 1
-    end
+  plants.each do |x, y|
+    neighbors = directions.map { |dx, dy| plants.include?([x + dx, y + dy]) }
+    top, right, bottom, left = neighbors[2], neighbors[1], neighbors[3], neighbors[0]
+    top_left, top_right, bottom_left, bottom_right = neighbors[4..7]
+
+    sides += 1 if !top_right && ((top && right) || (!top && !right))
+    sides += 1 if !top_left && ((top && left) || (!top && !left))
+    sides += 1 if !bottom_left && ((bottom && left) || (!bottom && !left))
+    sides += 1 if !bottom_right && ((bottom && right) || (!bottom && !right))
+    sides += 1 if top_right && !top && !right
+    sides += 1 if top_left && !top && !left
+    sides += 1 if bottom_left && !bottom && !left
+    sides += 1 if bottom_right && !bottom && !right
   end
+
   sides
 end
+
 
 def main(filename)
   garden = File.read(filename).split("\n").map(&:chars)
@@ -70,7 +52,6 @@ def main(filename)
 
   garden.each_with_index do |row, y|
     row.each_with_index do |cell, x|
-      # Only run search_plant if the cell is not nil
       if cell
         plants = search_plant(garden, y, x, cell)
         total += calculate_side(plants, rows, cols) * plants.length
